@@ -1,43 +1,40 @@
-var displayError = () => $('#errors').html("I'm sorry, there's been an error. Please try again.")
-
-var renderCommit = (commit) => {
-  return `<li><h3>${commit.sha}</h3><p>${commit.commit.message}</p></li>`
-}
-
-var renderCommits = (data) => {
-  let result = data.map((commit)=>renderCommit(commit)).join('')
-  return `<ul>${result}</ul>`
-}
-
-var showCommits = (el) => {
-  $.get(`https://api.github.com/repos/${el.dataset.owner}/${el.dataset.repository}/commits`, data => {
-    $('#details').html(renderCommits(data))
-  }).fail(error => {
-    displayError()
-  })
-}
-
-var renderSearchResult = (result) => {
-  return `
-      <div>
-        <h2><a href="${result.html_url}">${result.name}</a></h2>
-        <p><a href="#" data-repository="${result.name}" data-owner="${result.owner.login}" onclick="showCommits(this)">Show Commits</a></p>
-        <p>${result.description}</p>
-      </div>
-      <hr>
-    `
-}
-
-var renderSearchResults = (data) => data.items.map( result => renderSearchResult(result))
-
-var searchRepositories = () => {
-  const searchTerms = $('#searchTerms').val()
-  $.get(`https://api.github.com/search/repositories?q=${searchTerms}`, data => {
-      $('#results').html(renderSearchResults(data))
-    }).fail(error => {
-      displayError()
-    })
-}
-
 $(document).ready(function (){
+
 });
+function api_call(url, callbacks){
+  let jsxhr = $.get(url, () => {console.log("Success")})
+  jsxhr.fail( callbacks.fail )
+  jsxhr.done(callbacks.success)
+}
+function displayError(){
+  $("#errors").html("error")
+
+}
+
+function searchRepositories(){
+  let search_terms = $("#searchTerms").val()
+  let api_call_root = "https://api.github.com/search/repositories?"
+  let api_call_query = `q=${search_terms}`
+  let success = (resp) => {
+    search_terms = search_terms.split('')
+    search_terms[0] = search_terms[0].toUpperCase()
+    search_terms = search_terms.join('')
+    $("#results").html(`${search_terms}<br/>Repos found: ${resp.total_count}`)
+    }
+  let fail = () => { displayError() }
+  api_call(api_call_root + api_call_query, {"success": success, "fail": fail})
+}
+
+function showCommits(repo_details){
+//  let xhr = new XMLHttpRequest()
+//  xhr.setRequestHeader("Accept", "application/vnd.github.cloak-preview")
+  let api_call_root = `https://api.github.com/repos/${repo_details.dataset.owner}/${repo_details.dataset.repository}/commits/`
+  //let api_call_query = `q=repo:${repo_details.owner}/${repo_details.repository}`
+  let success = (resp) => {
+      let sha = resp[0].sha
+      console.log(sha)
+      $("#details").html(sha)
+  }
+  let fail = () => { displayError() }
+  api_call(api_call_root, {"success": success, "fail": fail})
+  }
